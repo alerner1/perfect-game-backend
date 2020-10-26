@@ -10,16 +10,40 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_10_26_162136) do
+ActiveRecord::Schema.define(version: 2020_10_26_201900) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "users", force: :cascade do |t|
-    t.string "username"
-    t.string "password_digest"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+  create_table "games", force: :cascade do |t|
+    t.integer "rawg_id"
   end
 
+  create_table "user_games", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "game_id", null: false
+    t.string "list"
+    t.index ["game_id"], name: "index_user_games_on_game_id"
+    t.index ["user_id"], name: "index_user_games_on_user_id"
+  end
+
+  create_table "user_played_games", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "game_id", null: false
+    t.integer "liked"
+    t.index ["game_id"], name: "index_user_played_games_on_game_id"
+    t.index ["user_id"], name: "index_user_played_games_on_user_id"
+  end
+
+  create_table "users", force: :cascade do |t|
+    t.string "email"
+    t.string "password_digest"
+    t.string "steam_name"
+    t.string "steam_id"
+  end
+
+  add_foreign_key "user_games", "games"
+  add_foreign_key "user_games", "users"
+  add_foreign_key "user_played_games", "games"
+  add_foreign_key "user_played_games", "users"
 end
