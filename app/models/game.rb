@@ -24,6 +24,7 @@ class Game < ApplicationRecord
       game['first_release_date'] = Time.at(game['first_release_date']).to_datetime.strftime('%Y')
       split_img_url = game['cover']['url'].split('t_thumb')
       game['cover']['url'] = split_img_url.join('t_1080p')
+      game['liked'] = false
     end
   end
 end
