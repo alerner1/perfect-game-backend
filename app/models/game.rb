@@ -8,16 +8,22 @@ class Game < ApplicationRecord
     igdb_id = Rails.application.credentials.igdb[:igdb_id]
     igdb_access_token = Rails.application.credentials.igdb[:igdb_access_token]
 
-    HTTParty.post(
+    games_info = HTTParty.post(
       'https://api.igdb.com/v4/games/', 
-      :body => 'fields name,rating,rating_count;
+      :body => 'fields id, name,cover.url,first_release_date;
                sort rating desc;
-               where rating != null & total_rating_count > 300;
+               where rating != null & total_rating_count > 300 & parent_game = null & name != "The Last of Us Remastered";
                limit 25;',
       :headers => {
         "Client-ID": igdb_id,
         Authorization: "Bearer #{igdb_access_token}"
       },
     ).parsed_response
+
+    games_info.each do |game|
+      game['first_release_date'] = Time.at(game['first_release_date']).to_datetime.strftime('%Y')
+      split_img_url = game['cover']['url'].split('t_thumb')
+      game['cover']['url'] = split_img_url.join('t_1080p')
+    end
   end
 end
