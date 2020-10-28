@@ -38,7 +38,7 @@ class Game < ApplicationRecord
             fields id, name, cover.url, first_release_date, platforms.abbreviation;
             limit 100;"
 
-    HTTParty.post(
+    search_results = HTTParty.post(
       'https://api.igdb.com/v4/games/',
       :body => body,
       :headers => {
@@ -46,5 +46,8 @@ class Game < ApplicationRecord
         Authorization: "Bearer #{igdb_access_token}"
       }
     ).parsed_response
+    search_results.each do |result|
+      result['first_release_date'] = Time.at(result['first_release_date']).to_datetime.strftime('%Y') unless result['first_release_date'] == nil
+    end
   end
 end
