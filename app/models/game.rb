@@ -4,6 +4,8 @@ class Game < ApplicationRecord
   has_many :user_played_games
   has_many :played_users, through: :user_played_games, :source => :user
 
+  
+
   def self.get_popular_games
     igdb_id = Rails.application.credentials.igdb[:igdb_id]
     igdb_access_token = Rails.application.credentials.igdb[:igdb_access_token]
@@ -26,5 +28,23 @@ class Game < ApplicationRecord
       game['cover']['url'] = split_img_url.join('t_1080p')
       game['liked'] = false
     end
+  end
+  
+  def self.search(query)
+    igdb_id = Rails.application.credentials.igdb[:igdb_id]
+    igdb_access_token = Rails.application.credentials.igdb[:igdb_access_token]
+    body = "search \"#{query.to_s}\";
+            where parent_game = null;
+            fields id, name, cover.url, first_release_date, platforms.abbreviation;
+            limit 100;"
+
+    HTTParty.post(
+      'https://api.igdb.com/v4/games/',
+      :body => body,
+      :headers => {
+        "Client-ID": igdb_id,
+        Authorization: "Bearer #{igdb_access_token}"
+      }
+    ).parsed_response
   end
 end

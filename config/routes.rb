@@ -7,6 +7,7 @@ Rails.application.routes.draw do
       post '/login', to: 'auth#create'
       get '/profile', to: 'users#profile'
       get '/games/popular', to: 'games#popular'
+      post '/games/search', to: 'games#search'
     end
   end
 end
