@@ -16,7 +16,11 @@ ActiveRecord::Schema.define(version: 2020_10_26_201900) do
   enable_extension "plpgsql"
 
   create_table "games", force: :cascade do |t|
-    t.integer "rawg_id"
+    t.integer "igdb_id"
+    t.string "name"
+    t.string "cover_url"
+    t.string "release_date"
+    t.string "platforms"
   end
 
   create_table "user_games", force: :cascade do |t|

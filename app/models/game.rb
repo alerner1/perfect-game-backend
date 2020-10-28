@@ -3,8 +3,7 @@ class Game < ApplicationRecord
   has_many :users, through: :user_games
   has_many :user_played_games
   has_many :played_users, through: :user_played_games, :source => :user
-
-  
+  serialize :platforms
 
   def self.get_popular_games
     igdb_id = Rails.application.credentials.igdb[:igdb_id]
@@ -12,9 +11,9 @@ class Game < ApplicationRecord
 
     games_info = HTTParty.post(
       'https://api.igdb.com/v4/games/', 
-      :body => 'fields id, name,cover.url,first_release_date;
-               sort rating desc;
-               where rating != null & total_rating_count > 300 & parent_game = null & name != "The Last of Us Remastered";
+      :body => 'fields id, name, cover.url, first_release_date, platforms.abbreviation;
+               sort total_rating desc;
+               where total_rating != null & total_rating_count > 300 & parent_game = null & name != "The Last of Us Remastered";
                limit 25;',
       :headers => {
         "Client-ID": igdb_id,
@@ -51,3 +50,10 @@ class Game < ApplicationRecord
     end
   end
 end
+
+
+# t.integer :igdb_id
+# t.string :name
+# t.string :cover_url
+# t.string :release_date
+# t.string :platforms
