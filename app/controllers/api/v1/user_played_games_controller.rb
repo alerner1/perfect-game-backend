@@ -22,6 +22,16 @@ class Api::V1::UserPlayedGamesController < ApplicationController
     end
   end
 
+  def destroy
+    user_played_game = UserPlayedGame.find(params[:id])
+    user_played_game.destroy
+    if user_played_game.destroyed?
+      render json: { user_played_game: 'destroyed' }, status: :accepted
+    else
+      render json: { error: 'unable to destroy' }, status: :not_acceptable
+    end
+  end
+
   private
 
   def user_played_game_params
