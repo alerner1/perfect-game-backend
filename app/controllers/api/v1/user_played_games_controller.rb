@@ -12,10 +12,20 @@ class Api::V1::UserPlayedGamesController < ApplicationController
     end
   end
 
+  def update
+    user_played_game = UserPlayedGame.find(params[:id])
+    user_played_game.update(user_played_game_params)
+    if user_played_game.save
+      render json: { user_played_game: user_played_game }, status: :accepted
+    else
+      render json: { error: 'failed to update user played game' }, status: :not_acceptable
+    end
+  end
+
   private
 
   def user_played_game_params
-    params.require(:user_played_game).permit(:game_id, :liked)
+    params.require(:user_played_game).permit(:user_id, :game_id, :liked)
   end
 
   def game_params
