@@ -8,6 +8,10 @@ class Api::V1::GamesController < ApplicationController
     render json: Game.search(params[:game][:query])
   end
 
+  def quick_recommendations
+    render json: Game.get_quick_recs
+  end
+
   private
 
   # not sure if we actually need this?

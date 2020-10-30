@@ -23,9 +23,13 @@ class Game < ApplicationRecord
 
     games_info.each do |game|
       game['first_release_date'] = Time.at(game['first_release_date']).to_datetime.strftime('%Y')
-      split_img_url = game['cover']['url'].split('t_thumb')
-      game['cover']['url'] = split_img_url.join('t_1080p')
+      if game['cover'] != nil
+        split_img_url = game['cover']['url'].split('t_thumb')
+        game['cover']['url'] = split_img_url.join('t_1080p')
+      end
       game['liked'] = false
+      game['igdb_id'] = game['id']
+      game.delete('id')
     end
   end
   
@@ -47,13 +51,39 @@ class Game < ApplicationRecord
     ).parsed_response
     search_results.each do |result|
       result['first_release_date'] = Time.at(result['first_release_date']).to_datetime.strftime('%Y') unless result['first_release_date'] == nil
+      if result['cover'] != nil
+        split_img_url = result['cover']['url'].split('t_thumb')
+        result['cover']['url'] = split_img_url.join('t_1080p')
+      end
+      result['igdb_id'] = result['id']
+      result.delete('id')
+    end
+  end
+
+  def self.get_quick_recs
+    igdb_id = Rails.application.credentials.igdb[:igdb_id]
+    igdb_access_token = Rails.application.credentials.igdb[:igdb_access_token]
+    games_info = HTTParty.post(
+      'https://api.igdb.com/v4/games',
+      :body => 'fields id, name, cover.url, first_release_date, platforms.abbreviation;
+                sort total_rating desc;
+                limit 10;',
+      :headers => {
+        "Client-ID": igdb_id,
+        Authorization: "Bearer #{igdb_access_token}"
+      }
+    ).parsed_response
+
+    games_info.each do |game|
+      game['first_release_date'] = Time.at(game['first_release_date']).to_datetime.strftime('%Y') unless game['first_release_date'] == nil
+      if game['cover'] != nil
+        split_img_url = game['cover']['url'].split('t_thumb')
+        game['cover']['url'] = split_img_url.join('t_1080p')
+        game['cover_url'] = game['cover']['url']
+        game.delete('cover')
+        game['igdb_id'] = game['id']
+        game.delete('id')
+      end
     end
   end
 end
-
-
-# t.integer :igdb_id
-# t.string :name
-# t.string :cover_url
-# t.string :release_date
-# t.string :platforms

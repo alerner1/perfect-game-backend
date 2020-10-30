@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       get '/profile', to: 'users#profile'
       get '/games/popular', to: 'games#popular'
       post '/games/search', to: 'games#search'
+      post '/games/quick_recommendations', to: 'games#quick_recommendations'
     end
   end
 end
