@@ -28,4 +28,10 @@ class Genre < ApplicationRecord
 
     # length: 23
   end
+
+  def self.sorted_by_name
+    self.all.sort_by do |genre|
+      genre.name
+    end
+  end
 end

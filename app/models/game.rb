@@ -57,7 +57,7 @@ class Game < ApplicationRecord
     body = "
             search \"#{query.to_s}\";
             where parent_game = null;
-            fields id, name, cover.url, first_release_date, platforms.abbreviation;
+            fields id, name, cover.url, first_release_date, platforms.abbreviation, genres.name;
             limit 100;
           "
 
@@ -87,34 +87,42 @@ class Game < ApplicationRecord
   end
 
   def self.get_all_games
-    body = "
-            fields id, name, cover.url, first_release_date, platforms.abbreviation, genres.name; 
-            limit 500;
-          "
+    offset = 0
 
-    games_info = HTTParty.post(
-      "#{BASE_URL}/games",
-      :headers => HEADERS,
-      :body => body
-    ).parsed_response
+    while offset < 135000 do
+      body = "
+              fields id, name, cover.url, first_release_date, platforms.abbreviation, genres.name; 
+              limit 500;
+              offset #{offset};
+            "
 
-    reformatted_games_info = Game.reformat_results(games_info)
-    
-    reformatted_games_info.each do |game|
-      game.delete('first_release_date')
-      game.delete('liked')
+      games_info = HTTParty.post(
+        "#{BASE_URL}/games",
+        :headers => HEADERS,
+        :body => body
+      ).parsed_response
 
-      genres = game['genres']
-      game.delete('genres')
+      reformatted_games_info = Game.reformat_results(games_info)
+      
+      reformatted_games_info.each do |game|
+        game.delete('first_release_date')
+        game.delete('liked')
 
-      stored_game = Game.find_or_create_by(igdb_id: game["igdb_id"])
-      stored_game.update(game)
+        genres = game['genres']
+        game.delete('genres')
+        stored_game = Game.find_or_create_by(igdb_id: game["igdb_id"])
+        stored_game.update(game)
 
-      genres.each do |genre|
-        stored_genre = Genre.find_by(name: genre['name'])
-        GameGenre.find_or_create_by(game: stored_game, genre: stored_genre)
-      end unless !genres
+        genres.each do |genre|
+          stored_genre = Genre.find_by(name: genre['name'])
+          GameGenre.find_or_create_by(game: stored_game, genre: stored_genre)
+        end unless !genres
+      end
+
+      offset += 500
     end
+
+    reformatted_games_info
   end
 
   def self.get_num_of_games
@@ -150,5 +158,28 @@ class Game < ApplicationRecord
 
     # length: 25821
     byebug
+  end
+
+  def build_vector
+    # it would be great performance wise if we could automatically build this
+    # when we create the game and store it as an attribute somehow
+    # but since this is a much smaller vector for testing purposes, we'll
+    # leave it like this for now.
+
+    elements = Genre.sorted_by_name.map do |genre|
+      self.genres.find_by(id: genre.id) ? 1 : 0
+    end
+
+    Vector.elements(elements)
+    
+  end
+
+  def self.cosine_similarity(vector1, vector2)
+    dot_product = vector1.inner_product vector2
+    magnitude_product = vector1.r * vector2.r
+
+    dot_product / magnitude_product
+
+    # i think i did it?????
   end
 end

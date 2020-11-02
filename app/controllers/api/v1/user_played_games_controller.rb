@@ -1,7 +1,7 @@
 class Api::V1::UserPlayedGamesController < ApplicationController
 
   def create
-    @game = Game.find_or_create_by(game_params)
+    @game = Game.find_by(igdb_id: params[:game][:igdb_id])
     # the game_id thing below is going to get confusing. adjust attributes of Game to fix.
     @user_played_game = UserPlayedGame.find_or_create_by(user_id: current_user.id, game_id: @game.id)
     @user_played_game.update(liked: params[:liked])
