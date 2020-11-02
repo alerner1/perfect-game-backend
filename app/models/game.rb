@@ -3,6 +3,8 @@ class Game < ApplicationRecord
   has_many :users, through: :user_games
   has_many :user_played_games
   has_many :played_users, through: :user_played_games, :source => :user
+  has_many :game_genres
+  has_many :genres, through: :game_genres
   serialize :platforms
 
   IGDB_ID = Rails.application.credentials.igdb[:igdb_id]

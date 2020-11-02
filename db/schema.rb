@@ -10,10 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_10_26_201900) do
+ActiveRecord::Schema.define(version: 2020_11_02_162025) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "game_genres", force: :cascade do |t|
+    t.bigint "genre_id", null: false
+    t.bigint "game_id", null: false
+    t.index ["game_id"], name: "index_game_genres_on_game_id"
+    t.index ["genre_id"], name: "index_game_genres_on_genre_id"
+  end
 
   create_table "games", force: :cascade do |t|
     t.integer "igdb_id"
@@ -21,6 +28,10 @@ ActiveRecord::Schema.define(version: 2020_10_26_201900) do
     t.string "cover_url"
     t.string "release_date"
     t.string "platforms"
+  end
+
+  create_table "genres", force: :cascade do |t|
+    t.string "name"
   end
 
   create_table "user_games", force: :cascade do |t|
@@ -46,6 +57,8 @@ ActiveRecord::Schema.define(version: 2020_10_26_201900) do
     t.string "steam_id"
   end
 
+  add_foreign_key "game_genres", "games"
+  add_foreign_key "game_genres", "genres"
   add_foreign_key "user_games", "games"
   add_foreign_key "user_games", "users"
   add_foreign_key "user_played_games", "games"
