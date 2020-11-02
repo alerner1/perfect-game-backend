@@ -88,7 +88,7 @@ class Game < ApplicationRecord
 
   def self.get_all_games
     body = "
-            fields id, name, cover.url, first_release_date, platforms.abbreviation; 
+            fields id, name, cover.url, first_release_date, platforms.abbreviation, genres.name; 
             limit 500;
           "
 
@@ -103,8 +103,17 @@ class Game < ApplicationRecord
     reformatted_games_info.each do |game|
       game.delete('first_release_date')
       game.delete('liked')
+
+      genres = game['genres']
+      game.delete('genres')
+
       stored_game = Game.find_or_create_by(igdb_id: game["igdb_id"])
       stored_game.update(game)
+
+      genres.each do |genre|
+        stored_genre = Genre.find_by(name: genre['name'])
+        GameGenre.find_or_create_by(game: stored_game, genre: stored_genre)
+      end unless !genres
     end
   end
 
@@ -124,22 +133,6 @@ class Game < ApplicationRecord
     # length right now: 134695
     byebug
     # so basically check if array is empty, if so stop if not continue
-  end
-
-  def self.get_genres
-    body = "
-            fields name; 
-            limit 500;
-          "
-
-    genres_info = HTTParty.post(
-      "#{BASE_URL}/genres",
-      :headers => HEADERS,
-      :body => body
-    ).parsed_response
-    
-    # length: 23
-    byebug
   end
 
   def self.get_keywords
