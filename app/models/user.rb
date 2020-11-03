@@ -27,7 +27,8 @@ class User < ApplicationRecord
 
     # strat: for each game, build its vector, then add them together, then divide by total num of games via vector.map{ |e| e.to_f / total}
     
-    user_profile = Vector.zero(45) 
+    # change to 45 + 75 after building all new game vectors
+    user_profile = Vector.zero(45 + 75) 
     
     counter = 0
     
@@ -60,16 +61,15 @@ class User < ApplicationRecord
     best_games = []
 
     Game.all.each do |game|
-      # next if game.release_date == nil
-      # next if game.release_date.to_i < 2010
-      # next if game.genres.length == 0 && game.themes.length == 0
-
+      
+      # don't even bother if it's > 15 years old, has total rating < 70 (or doesn't have a total rating at all), or its game profile is a zero vector and therefore meaningless
       next if game.release_date.to_i < 2005
       next if game.total_rating == nil || game.total_rating < 70
-      next if game.game_profile == Vector.zero(45)
+      next if game.game_profile.zero?
 
       similarity = Game.cosine_similarity(user_profile, game.game_profile)
 
+      # don't even bother adding/checking if there's no similarity at all
       next if similarity == 0.0
 
       if best_games.length >= 100
@@ -85,7 +85,7 @@ class User < ApplicationRecord
         best_games.push({game: game, similarity: similarity})
       end
 
-      # :07 skipping games with no total rating or total rating < 70
+      # :06 skipping games with no total rating or total rating < 70
       # :17 skipping games older than 05
       # :44 without skipping oldest games
       # took 3:45 ish with checking for genres and themes length

@@ -41,4 +41,14 @@ class Keyword < ApplicationRecord
       keyword.name
     end
   end
+
+  def self.most_common
+    most_common = self.all.filter do |keyword|
+      keyword.games.length > 1000
+    end
+
+    most_common.sort_by do |keyword|
+      keyword.name
+    end
+  end
 end

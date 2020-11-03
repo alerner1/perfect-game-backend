@@ -176,14 +176,14 @@ class Game < ApplicationRecord
           end
         end unless !multiplayer_modes
 
-        game_profile = stored_game.build_vector
-        stored_game.update(game_profile: game_profile)
+        # game_profile = stored_game.build_vector
+        # stored_game.update(game_profile: game_profile)
       end
 
       offset += 500
     end
-
-    reformatted_games_info
+    
+    Game.refresh_game_profiles
   end
 
   def self.get_companies
@@ -203,12 +203,23 @@ class Game < ApplicationRecord
     byebug
   end
 
-  def build_vector
+  def self.refresh_game_profiles
+    most_common_keywords = Keyword.most_common
+
+    Game.all.each do |game|
+      new_profile = game.build_vector(most_common_keywords)
+      game.update(game_profile: new_profile)
+    end
+  end
+
+  def build_vector(most_common_keywords)
     # the good news is that we can always create a method to assign all new game profiles (and just game profiles) when we inevitably expand this vector
     
-    game_profile = Vector.zero(45)
-    sorted_categories = Genre.sorted_by_name + Theme.sorted_by_name
-   
+    # there are 75 keywords in the Keyword.most_common vector
+    
+    game_profile = Vector.zero(Genre.all.length + Theme.all.length + 75)
+    sorted_categories = Genre.sorted_by_name + Theme.sorted_by_name + most_common_keywords
+
     self.genres.each do |genre|
       genre_index = sorted_categories.index(genre)
       game_profile[genre_index] = 1
@@ -218,6 +229,11 @@ class Game < ApplicationRecord
       theme_index = sorted_categories.index(theme)
       game_profile[theme_index] = 1
     end unless self.themes.length == 0
+
+    self.keywords.each do |keyword|
+      keyword_index = sorted_categories.index(keyword)
+      game_profile[keyword_index] = 1 unless keyword_index == nil
+    end unless self.keywords.length == 0
 
     game_profile
     
