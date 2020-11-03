@@ -5,7 +5,17 @@ class Game < ApplicationRecord
   has_many :played_users, through: :user_played_games, :source => :user
   has_many :game_genres
   has_many :genres, through: :game_genres
+  has_many :game_game_modes
+  has_many :game_modes, through: :game_game_modes
+  has_many :game_keywords
+  has_many :keywords, through: :game_keywords
+  has_many :game_multiplayer_modes
+  has_many :multiplayer_modes, through: :game_multiplayer_modes
+  has_many :game_themes
+  has_many :themes, through: :game_themes
   serialize :platforms
+  serialize :involved_companies
+  serialize :game_profile
 
   IGDB_ID = Rails.application.credentials.igdb[:igdb_id]
   IGDB_ACCESS_TOKEN = Rails.application.credentials.igdb[:igdb_access_token]
@@ -91,7 +101,7 @@ class Game < ApplicationRecord
 
     while offset < 135000 do
       body = "
-              fields id, name, cover.url, first_release_date, platforms.abbreviation, genres.name; 
+              fields id, name, cover.url, first_release_date, storyline, summary, total_rating, multiplayer_modes.*, game_modes.name, involved_companies.*, keywords.name, platforms.abbreviation, genres.name, themes.name; 
               limit 500;
               offset #{offset};
             "
@@ -108,8 +118,30 @@ class Game < ApplicationRecord
         game.delete('first_release_date')
         game.delete('liked')
 
+        # still need to store: storyline, summary, total_rating, multiplayer_modes, game_modes, involved_companies, keywords.name, themes.name
+        # plain attributes: storyline, summary, total_rating
+        # serialize: involved_companies (maybe?)
+        # new models: multiplayer_modes, game_modes, keywords, themes
+
         genres = game['genres']
         game.delete('genres')
+
+        multiplayer_modes = game['multiplayer_modes']
+        game.delete('multiplayer_modes')
+
+        game_modes = game['game_modes']
+        game.delete('game_modes')
+
+        keywords = game['keywords']
+        game.delete('keywords')
+
+        themes = game['themes']
+        game.delete('themes')
+        
+        # if multiplayer_modes
+        #   byebug
+        # end
+
         stored_game = Game.find_or_create_by(igdb_id: game["igdb_id"])
         stored_game.update(game)
 
@@ -117,6 +149,35 @@ class Game < ApplicationRecord
           stored_genre = Genre.find_by(name: genre['name'])
           GameGenre.find_or_create_by(game: stored_game, genre: stored_genre)
         end unless !genres
+
+        themes.each do |theme|
+          stored_theme = Theme.find_by(name: theme['name'])
+          GameTheme.find_or_create_by(game: stored_game, theme: stored_theme)
+        end unless !themes
+
+        keywords.each do |keyword|
+          stored_keyword = Keyword.find_by(name: keyword['name'])
+          GameKeyword.find_or_create_by(game: stored_game, keyword: stored_keyword)
+        end unless !keywords
+
+        game_modes.each do |game_mode|
+          stored_game_mode = GameMode.find_by(name: game_mode['name'])
+          GameGameMode.find_or_create_by(game: stored_game, game_mode: stored_game_mode)
+        end unless !game_modes
+
+        # doesn't store max num of players, will figure that out later 
+        # if necessary/desired
+        multiplayer_modes.each do |mm_obj|
+          mm_obj.each do |key, value|
+            if value == true
+              multiplayer_mode = MultiplayerMode.find_by(name: key)
+              GameMultiplayerMode.find_or_create_by(game: stored_game, multiplayer_mode: multiplayer_mode)
+            end
+          end
+        end unless !multiplayer_modes
+
+        game_profile = stored_game.build_vector
+        stored_game.update(game_profile: game_profile)
       end
 
       offset += 500
@@ -125,52 +186,40 @@ class Game < ApplicationRecord
     reformatted_games_info
   end
 
-  def self.get_num_of_games
-    body = "
-            fields id, name, cover.url, first_release_date, platforms.abbreviation; 
-            limit 500; 
-            offset 134500;
-          "
-
-    games_info = HTTParty.post(
-      "#{BASE_URL}/games",
-      :headers => HEADERS,
-      :body => body
-    ).parsed_response
-
-    # length right now: 134695
-    byebug
-    # so basically check if array is empty, if so stop if not continue
-  end
-
-  def self.get_keywords
+  def self.get_companies
     body = "
             fields name; 
             limit 500; 
-            offset 25500;
+            offset 28000;
           "
 
-    keywords_info = HTTParty.post(
-      "#{BASE_URL}/keywords",
+    companies_info = HTTParty.post(
+      "#{BASE_URL}/companies",
       :headers => HEADERS,
       :body => body
     ).parsed_response
 
-    # length: 25821
+    # total 28384
     byebug
   end
 
   def build_vector
-    # it would be great performance wise if we could automatically build this
-    # when we create the game and store it as an attribute somehow
-    # but since this is a much smaller vector for testing purposes, we'll
-    # leave it like this for now.
+    # the good news is that we can always create a method to assign all new game profiles (and just game profiles) when we inevitably expand this vector
+    
+    game_profile = Vector.zero(45)
+    sorted_categories = Genre.sorted_by_name + Theme.sorted_by_name
+   
+    self.genres.each do |genre|
+      genre_index = sorted_categories.index(genre)
+      game_profile[genre_index] = 1
+    end unless self.genres.length == 0
 
-    elements = Genre.sorted_by_name.map do |genre|
-      self.genres.find_by(id: genre.id) ? 1 : 0
-    end
+    self.themes.each do |theme|
+      theme_index = sorted_categories.index(theme)
+      game_profile[theme_index] = 1
+    end unless self.themes.length == 0
 
-    Vector.elements(elements)
+    game_profile
     
   end
 

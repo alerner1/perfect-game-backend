@@ -27,7 +27,7 @@ class User < ApplicationRecord
 
     # strat: for each game, build its vector, then add them together, then divide by total num of games via vector.map{ |e| e.to_f / total}
     
-    user_profile = Vector.zero(23) 
+    user_profile = Vector.zero(45) 
     
     counter = 0
     
@@ -36,7 +36,7 @@ class User < ApplicationRecord
       if user_played_game.liked == 1
         game = user_played_game.game
         
-        game_profile = game.build_vector
+        game_profile = game.game_profile
 
         user_profile = user_profile + game_profile
 
@@ -56,34 +56,42 @@ class User < ApplicationRecord
   end
 
   def quick_recommendations
-    # just one recommendation for now
-    # build user vector
     user_profile = self.build_profile_vector
-    # similarity = 0
-    # best_game = nil
     best_games = []
 
     Game.all.each do |game|
-      next if game.genres.length == 0
+      # next if game.release_date == nil
+      # next if game.release_date.to_i < 2010
+      # next if game.genres.length == 0 && game.themes.length == 0
 
-      game_profile = game.build_vector
+      next if game.release_date.to_i < 2005
+      next if game.total_rating == nil || game.total_rating < 70
+      next if game.game_profile == Vector.zero(45)
+
+      similarity = Game.cosine_similarity(user_profile, game.game_profile)
+
+      next if similarity == 0.0
+
+      if best_games.length >= 100
+        least_similar = best_games.min_by do |e|
+          e[:similarity]
+        end
       
-      new_similarity = Game.cosine_similarity(user_profile, game_profile)
+        if similarity > least_similar[:similarity]
+          game_index = best_games.index(least_similar)
+          best_games[game_index] = {game: game, similarity: similarity}
+        end
+      else # if it's shorter than 100
+        best_games.push({game: game, similarity: similarity})
+      end
 
-      next if new_similarity == 0.0
-
-      best_games.push({game: game, similarity: new_similarity})
-      # next if new_similarity < similarity
-
-      # similarity = new_similarity
-      # best_game = game
-      
-      break if best_games.length > 1000
+      # :07 skipping games with no total rating or total rating < 70
+      # :17 skipping games older than 05
+      # :44 without skipping oldest games
+      # took 3:45 ish with checking for genres and themes length
+      # break if best_games.length > 1000
     end
     byebug
-    # for each game, build game vector
-    # calculate similarity
-    # if similarity is greater than previous greatest similarity, keep that game
   end
 
   private
