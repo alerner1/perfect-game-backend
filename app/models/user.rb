@@ -91,7 +91,14 @@ class User < ApplicationRecord
       # took 3:45 ish with checking for genres and themes length
       # break if best_games.length > 1000
     end
-    byebug
+
+    best_games.sort_by do |game|
+      game[:similarity]
+    end.reverse
+
+    best_games.map do |game|
+      game[:game]
+    end
   end
 
   private

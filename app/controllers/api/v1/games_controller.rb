@@ -9,7 +9,7 @@ class Api::V1::GamesController < ApplicationController
   end
 
   def quick_recommendations
-    render json: Game.get_quick_recs
+    render json: Game.get_quick_recs(current_user)
   end
 
   private

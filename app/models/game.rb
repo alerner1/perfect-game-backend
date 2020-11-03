@@ -80,20 +80,8 @@ class Game < ApplicationRecord
     Game.reformat_results(search_results)
   end
 
-  def self.get_quick_recs
-    body = "
-            fields id, name, cover.url, first_release_date, platforms.abbreviation;
-            sort total_rating desc;
-            limit 10;
-          "
-
-    games_info = HTTParty.post(
-      "#{BASE_URL}/games",
-      :headers => HEADERS,
-      :body => body
-    ).parsed_response
-
-    Game.reformat_results(games_info)
+  def self.get_quick_recs(current_user)
+    current_user.quick_recommendations
   end
 
   def self.get_all_games
