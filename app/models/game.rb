@@ -67,7 +67,7 @@ class Game < ApplicationRecord
     body = "
             search \"#{query.to_s}\";
             where parent_game = null;
-            fields id, name, cover.url, first_release_date, platforms.abbreviation, genres.name;
+            fields id, name, cover.url, first_release_date, storyline, summary, total_rating, multiplayer_modes.*, game_modes.name, platforms.abbreviation, genres.name, themes.name;
             limit 100;
           "
 
