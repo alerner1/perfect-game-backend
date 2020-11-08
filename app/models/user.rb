@@ -42,6 +42,12 @@ class User < ApplicationRecord
         user_profile = user_profile + game_profile
 
         counter += 1
+      elsif user_played_game.liked == -1
+        game = user_played_game.game
+
+        game_profile = game.game_profile
+
+        user_profile = user_profile - game_profile
       end
 
     end
