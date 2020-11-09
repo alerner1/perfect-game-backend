@@ -188,7 +188,18 @@ class Game < ApplicationRecord
     ).parsed_response
 
     # total 28384
-    byebug
+  end
+
+  def self.get_platform_abbreviations
+    body = "
+            fields name;
+            limit 500;
+          "
+    platforms_info = HTTParty.post(
+      "#{BASE_URL}/platforms",
+      :headers => HEADERS,
+      :body => body
+    ).parsed_response
   end
 
   def self.refresh_game_profiles

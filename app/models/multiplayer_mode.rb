@@ -12,7 +12,7 @@ class MultiplayerMode < ApplicationRecord
 
 
   def self.create_multiplayer_modes
-    modes = ["campaigncoop", "dropin", "game", "lancoop", "offlinecoop", "onlinecoop", "splitscreen", "splitscreenonline"]
+    modes = ["campaigncoop", "dropin", "lancoop", "offlinecoop", "onlinecoop", "splitscreen", "splitscreenonline"]
 
     modes.each do |mode|
       MultiplayerMode.find_or_create_by(name: mode)
