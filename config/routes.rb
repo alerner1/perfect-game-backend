@@ -10,6 +10,7 @@ Rails.application.routes.draw do
       get '/games/popular', to: 'games#popular'
       post '/games/search', to: 'games#search'
       post '/games/quick_recommendations', to: 'games#quick_recommendations'
+      post '/games/advanced_recommendations', to: 'games#advanced_recommendations'
     end
   end
 end

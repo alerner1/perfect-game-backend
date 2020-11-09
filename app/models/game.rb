@@ -84,6 +84,10 @@ class Game < ApplicationRecord
     current_user.quick_recommendations
   end
 
+  def self.get_advanced_recs(current_user, parameters)
+    current_user.advanced_recommendations(parameters)
+  end
+
   def self.get_all_games
     offset = 0
 
@@ -192,7 +196,7 @@ class Game < ApplicationRecord
 
   def self.get_platform_abbreviations
     body = "
-            fields name;
+            fields abbreviation;
             limit 500;
           "
     platforms_info = HTTParty.post(

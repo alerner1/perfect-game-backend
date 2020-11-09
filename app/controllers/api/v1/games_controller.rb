@@ -12,6 +12,10 @@ class Api::V1::GamesController < ApplicationController
     render json: Game.get_quick_recs(current_user)
   end
 
+  def advanced_recommendations
+    render json: Game.get_advanced_recs(current_user, params)
+  end
+
   private
 
   # not sure if we actually need this?
