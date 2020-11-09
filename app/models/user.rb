@@ -92,12 +92,20 @@ class User < ApplicationRecord
             played_game.igdb_id == game.igdb_id
           end
 
+          next if self.recced_games.any? do |recced_game|
+            recced_game.igdb_id == game.igdb_id
+          end
+
           game_index = best_games.index(least_similar)
           best_games[game_index] = {game: game, similarity: similarity}
         end
       else # if it's shorter than 100
         next if self.played_games.any? do |played_game|
           played_game.igdb_id == game.igdb_id
+        end
+
+        next if self.recced_games.any? do |recced_game|
+          recced_game.igdb_id == game.igdb_id
         end
 
         best_games.push({game: game, similarity: similarity})
@@ -152,6 +160,10 @@ class User < ApplicationRecord
           next if self.played_games.any? do |played_game|
             played_game.igdb_id == game.igdb_id
           end
+
+          next if self.recced_games.any? do |recced_game|
+            recced_game.igdb_id == game.igdb_id
+          end
           
           game_index = best_games.index(least_similar)
           best_games[game_index] = {game: game, similarity: similarity}
@@ -159,6 +171,10 @@ class User < ApplicationRecord
       else # if it's shorter than 100
         next if self.played_games.any? do |played_game|
           played_game.igdb_id == game.igdb_id
+        end
+
+        next if self.recced_games.any? do |recced_game|
+          recced_game.igdb_id == game.igdb_id
         end
 
         best_games.push({game: game, similarity: similarity})
