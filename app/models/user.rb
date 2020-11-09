@@ -42,18 +42,22 @@ class User < ApplicationRecord
         user_profile = user_profile + game_profile
 
         counter += 1
+      elsif user_played_game.liked == 0
+        counter += 1
       elsif user_played_game.liked == -1
         game = user_played_game.game
 
         game_profile = game.game_profile
 
         user_profile = user_profile - game_profile
+
+        counter += 1
       end
 
     end
     
     user_profile.map do |e| 
-      e.to_f / counter
+      e.to_f / counter unless counter == 0
     end
     # it works!!!
     
@@ -90,12 +94,6 @@ class User < ApplicationRecord
       else # if it's shorter than 100
         best_games.push({game: game, similarity: similarity})
       end
-
-      # :06 skipping games with no total rating or total rating < 70
-      # :17 skipping games older than 05
-      # :44 without skipping oldest games
-      # took 3:45 ish with checking for genres and themes length
-      # break if best_games.length > 1000
     end
 
     sorted = best_games.sort_by do |game|
@@ -107,48 +105,30 @@ class User < ApplicationRecord
     end
   end
 
-  def test_recs
-    results = Game.includes(:genres)
-    filtered = results.filter do |result|
-      result.genres.map do |r|
-        r.name
-      end.include?('Strategy')
-    end
-    byebug
-  end
-
   def advanced_recommendations(parameters)
+
     user_profile = self.build_profile_vector
     best_games = []
+    sql_query = Game.where({release_date: parameters[:releaseDate][0].. parameters[:releaseDate][1]}).joins(:genres, :game_modes, :multiplayer_modes).where(:game_modes => {name: parameters[:gameModes]}, :genres => {name: parameters[:genres]})
 
-    Game.includes(:genres, :game_modes, :multiplayer_modes).each do |game|
-      
-      next if game.release_date.to_i < parameters[:releaseDate][0].to_i || game.release_date.to_i > parameters[:releaseDate][1].to_i
+    # two versions here -- if they did specify multiplayer mode and if they didn't
+
+    if !parameters[:multiplayerModes].empty?
+      sql_query = Game.where({release_date: (parameters[:releaseDate][0] - 1) .. parameters[:releaseDate][1]}).joins(:genres, :game_modes, :multiplayer_modes).where(:game_modes => {name: parameters[:gameModes]}, :genres => {name: parameters[:genres]}, :multiplayer_modes => {name: parameters[:multiplayerModes]})
+    end
+
+    sql_query.each do |game|
       next if game.total_rating == nil || game.total_rating < 70
       next if game.game_profile.zero?
-      next if game.genres.empty? || game.platforms.empty? || game.game_modes.empty?
 
-      genre_names = game.genres.map do |genre|
-        genre.name
+      # platforms are serialized and therefore a bit more complicated so we do them separately here instead of in sql above
+      next if game.platforms.empty?
+
+      platform_abbrevs = game.platforms.map do |platform|
+        platform["abbreviation"]
       end
 
-      next if (genre_names & parameters[:genres]).empty?
-
-      game_mode_names = game.game_modes.map do |game_mode|
-        game_mode.name
-      end
-
-      next if (game_mode_names & parameters[:gameModes]).empty?
-
-      # if they've specified multiplayer modes
-      if !parameters[:multiplayerModes].empty?
-        next if game.multiplayer_modes.empty?
-        multiplayer_mode_names = game.multiplayer_modes.map do |multiplayer_mode|
-          multiplayer_mode.name
-        end
-
-        next if (multiplayer_mode_names & parameters[:multiplayerModes]).empty?
-      end
+      next if (platform_abbrevs & parameters[:platforms]).empty?
 
       similarity = Game.cosine_similarity(user_profile, game.game_profile)
 
@@ -176,108 +156,6 @@ class User < ApplicationRecord
     only_games = sorted.map do |game|
       game[:game]
     end
-  end
-
-  def advanced_recommendations_old(parameters)
-    user_profile = self.build_profile_vector
-    best_games = []
-    
-
-    filtered_games = Game.includes(:genres).filter do |game|
-      flag = true
-
-      if game.game_profile.zero?
-        flag = false
-      end
-
-      if flag == true && game.platforms
-        platform_names = game.platforms.map do |platform|
-            platform["abbreviation"]
-        end
-        if (platform_names & parameters[:platforms]).empty?
-          flag = false
-        end
-      else # no platforms
-        flag = false
-      end
-
-      if flag == true && !(game.release_date && game.release_date.to_i > parameters[:releaseDate][0] && game.release_date.to_i < parameters[:releaseDate][1])
-        flag = false
-      end
-
-      if flag == true && game.genres # only bother with this if flag is still true
-        genre_names = game.genres.map do |genre|
-          genre.name
-        end
-        if (genre_names & parameters[:genres]).empty?
-          flag = false
-        end
-      else
-        flag = false
-      end
-
-      flag
-    end
-
-    filtered_games.each do |game|
-      # don't even bother if it's > 15 years old, has total rating < 70 (or doesn't have a total rating at all), or its game profile is a zero vector and therefore meaningless
-      next if game.total_rating == nil || game.total_rating < 70
-      next if game.game_profile.zero?
-      # next if (game.platforms && (game.platforms & parameters[:platforms]).empty?)
-
-      # next if game.release_date.to_i < parameters.releaseDate[0]
-      # next if game.release_date.to_i > parameters.releaseDate[1]
-
-      # next if (game.genres & parameters.genres).empty?
-
-      # next if (game.game_modes & parameters.gameModes).empty?
-
-      # next if !parameters.multiplayerModes.empty? && (game.multiplayer_modes & parameters.multiplayerModes).empty?
-
-      # next if parameters.onlyOwned && !self.owned_games.find(game)
-
-      similarity = Game.cosine_similarity(user_profile, game.game_profile)
-
-      # don't even bother adding/checking if there's no similarity at all
-      next if similarity == 0.0
-
-      # if best_games.length >= 100
-      #   least_similar = best_games.min_by do |e|
-      #     e[:similarity]
-      #   end
-      
-      #   if similarity > least_similar[:similarity]
-      #     game_index = best_games.index(least_similar)
-      #     best_games[game_index] = {game: game, similarity: similarity}
-      #   end
-      # else # if it's shorter than 100
-        best_games.push({game: game, similarity: similarity})
-      # end
-      # best_games.filter! do |best_game|
-      #   if best_game[:game].platforms
-      #     platform_names = best_game[:game].platforms.map do |platform|
-      #         platform["abbreviation"]
-      #     end
-      #     !(platform_names & parameters[:platforms]).empty?
-      #   end
-      # end
-      # :06 skipping games with no total rating or total rating < 70
-      # :17 skipping games older than 05
-      # :44 without skipping oldest games
-      # took 3:45 ish with checking for genres and themes length
-      # break if best_games.length > 1000
-    end
-
-    recs = best_games.sort_by do |game|
-      game[:similarity]
-    end.reverse
-
-    formatted = recs.map do |game|
-      game[:game]
-    end
-
-    byebug
-
   end
 
   private
