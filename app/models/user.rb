@@ -125,17 +125,18 @@ class User < ApplicationRecord
 
     user_profile = self.build_profile_vector
     best_games = []
-    sql_query = Game.where({release_date: parameters[:releaseDate][0].. parameters[:releaseDate][1]}).joins(:genres, :game_modes, :multiplayer_modes).where(:game_modes => {name: parameters[:gameModes]}, :genres => {name: parameters[:genres]})
+    sql_query = Game.joins(:genres, :game_modes, :multiplayer_modes).where(:game_modes => {name: parameters[:gameModes]}, :genres => {name: parameters[:genres]})
 
     # two versions here -- if they did specify multiplayer mode and if they didn't
 
     if !parameters[:multiplayerModes].empty?
-      sql_query = Game.where({release_date: (parameters[:releaseDate][0] - 1) .. parameters[:releaseDate][1]}).joins(:genres, :game_modes, :multiplayer_modes).where(:game_modes => {name: parameters[:gameModes]}, :genres => {name: parameters[:genres]}, :multiplayer_modes => {name: parameters[:multiplayerModes]})
+      sql_query = Game.joins(:genres, :game_modes, :multiplayer_modes).where(:game_modes => {name: parameters[:gameModes]}, :genres => {name: parameters[:genres]}, :multiplayer_modes => {name: parameters[:multiplayerModes]})
     end
 
-    sql_query.each do |game|
+    sql_query.uniq.each do |game|
       next if game.total_rating == nil || game.total_rating < 70
       next if game.game_profile.zero?
+      next if game.release_date == nil || game.release_date.to_i < parameters[:releaseDate][0].to_i || game.release_date.to_i > parameters[:releaseDate][1].to_i
 
       # platforms are serialized and therefore a bit more complicated so we do them separately here instead of in sql above
       next if game.platforms.empty?
