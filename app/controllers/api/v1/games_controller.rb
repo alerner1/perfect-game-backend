@@ -5,15 +5,33 @@ class Api::V1::GamesController < ApplicationController
   end
 
   def search
-    render json: Game.search(params[:game][:query])
+    games = Game.search(params[:game][:query])
+    games.each do |game|
+      if game["cover_url"] == nil
+        game["cover_url"] = 'https://www.brdtex.com/wp-content/uploads/2019/09/no-image-480x480.png'
+      end
+    end
+    render json: games
   end
 
   def quick_recommendations
-    render json: Game.get_quick_recs(current_user)
+    games = Game.get_quick_recs(current_user)
+    games.each do |game|
+      if game["cover_url"] == nil
+        game["cover_url"] = 'https://www.brdtex.com/wp-content/uploads/2019/09/no-image-480x480.png'
+      end
+    end
+    render json: games
   end
 
   def advanced_recommendations
-    render json: Game.get_advanced_recs(current_user, params)
+    games = Game.get_advanced_recs(current_user, params)
+    games.each do |game|
+      if game["cover_url"] == nil
+        game["cover_url"] = 'https://www.brdtex.com/wp-content/uploads/2019/09/no-image-480x480.png'
+      end
+    end
+    render json: games
   end
 
   private

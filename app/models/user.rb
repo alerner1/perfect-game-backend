@@ -165,6 +165,10 @@ class User < ApplicationRecord
           next if self.recced_games.any? do |recced_game|
             recced_game.igdb_id == game.igdb_id
           end
+
+          next if !self.owned_games.any? do |owned_game|
+            owned_game.igdb_id == game.igdb_id
+          end unless parameters[:onlyOwned] == false
           
           game_index = best_games.index(least_similar)
           best_games[game_index] = {game: game, similarity: similarity}
@@ -177,6 +181,10 @@ class User < ApplicationRecord
         next if self.recced_games.any? do |recced_game|
           recced_game.igdb_id == game.igdb_id
         end
+
+        next if !self.owned_games.any? do |owned_game|
+          owned_game.igdb_id == game.igdb_id
+        end unless parameters[:onlyOwned] == false
 
         best_games.push({game: game, similarity: similarity})
       end
