@@ -1,24 +1,17 @@
-# README
+***The Perfect Game***
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+**Overview**
 
-Things you may want to cover:
+*The Perfect Game* is a video game recommendation engine written in Ruby on Rails and JavaScript/React.js. This repo contains the back end code; the front end is [here](https://github.com/alerner1/perfect-game-client).
 
-* Ruby version
+**Back End**
 
-* System dependencies
+The back end for *The Perfect Game* is written in Ruby on Rails.
 
-* Configuration
+**Demo**
 
-* Database creation
+A demo for this app can be found [here](https://www.loom.com/share/569d891dbd3c40bf98ede6fcc28a4010).
 
-* Database initialization
+**Try It Live**
 
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+[Try out the app](https://the-perfect-game.herokuapp.com) for yourself to get your own personalized recommendations.
