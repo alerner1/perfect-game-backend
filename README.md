@@ -1,4 +1,4 @@
-***The Perfect Game***
+<h1 align="center">The Perfect Game</h1>
 
 **Overview**
 
